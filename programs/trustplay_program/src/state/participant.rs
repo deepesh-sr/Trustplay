@@ -8,4 +8,3 @@ pub struct Participant {
     pub joined_at: i64,
     pub bump: u8,
 }
-

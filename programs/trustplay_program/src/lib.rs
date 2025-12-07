@@ -16,6 +16,6 @@ pub mod trustplay_program {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        initialize::handler(ctx)
+        create_room::handler(ctx)
     }
 }
