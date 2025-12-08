@@ -32,3 +32,23 @@ pub struct CreateRoom<'info>{
     pub organizer: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
+
+impl<'info> CreateRoom<'info>{
+
+    pub fn create_room(&mut self,rood_id : String,name : String,total_pool : u64,deadline : i64, vote_threshold : u8)-> Result<()>{
+
+        self.room.set_inner(Room { 
+            organizer: self.organizer.key(), 
+            room_id: rood_id, 
+            name: name, 
+            vault: self.vault.key(), 
+            total_pool: total_pool, 
+            status: crate::RoomStatus::Open, 
+            created_at: Clock::get()?.unix_timestamp, 
+            deadline_ts: deadline, 
+            vote_threshold: vote_threshold, 
+            bump: self.room.bump 
+        });
+        Ok(())
+    }
+}
