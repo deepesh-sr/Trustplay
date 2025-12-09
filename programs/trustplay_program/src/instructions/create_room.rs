@@ -35,11 +35,11 @@ pub struct CreateRoom<'info>{
 
 impl<'info> CreateRoom<'info>{
 
-    pub fn create_room(&mut self,rood_id : String,name : String,total_pool : u64,deadline : i64, vote_threshold : u8)-> Result<()>{
+    pub fn create_room(&mut self,room_id : String,name : String,total_pool : u64,deadline : i64, vote_threshold : u8)-> Result<()>{
 
         self.room.set_inner(Room { 
             organizer: self.organizer.key(), 
-            room_id: rood_id, 
+            room_id: room_id, 
             name: name, 
             vault: self.vault.key(), 
             total_pool: total_pool, 
