@@ -22,7 +22,6 @@ pub struct JoinRoom<'info> {
 
 impl<'info> JoinRoom<'info> {
     pub fn join_room( &mut self )-> Result<()>{
-        
     self.participant.set_inner(Participant { player: self.player.key(), joined_at: Clock::get()?.unix_timestamp, bump: self.participant.bump });
     Ok(())
     }
