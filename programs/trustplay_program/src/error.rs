@@ -4,4 +4,12 @@ use anchor_lang::prelude::*;
 pub enum ErrorCode {
     #[msg("Number overflow")]
     NumericalOverflow,
+    #[msg("Already Resolved")]
+    AlreadyResolved,
+    #[msg("No Votes")]
+    NoVotes,
+    #[msg("No Participant")]
+    NoParticipants,
+    #[msg("Insufficient Funds")]
+    InsufficientFunds,
 }
