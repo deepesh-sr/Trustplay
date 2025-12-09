@@ -21,7 +21,7 @@ pub struct ResolveClaim<'info> {
 
     /// participants_count is a trivial loader storing the current number of participants
     /// For simplicity we use an AccountLoader<u64> to store the count on-chain (could be improved)
-    pub participants_count: AccountLoader<'info, u64>,
+    // pub participants_count: AccountLoader<'info, u64>,
 
     pub system_program: Program<'info, System>,
 }

@@ -23,11 +23,11 @@ pub struct SubmitClaim<'info> {
 
 impl <'info> SubmitClaim<'info>{
 
-    pub fn submit_claim(&mut self, claim_id: String, proof_hash: String)-> Result<()>{
+    pub fn submit_claim(&mut self, claim_id: String)-> Result<()>{
          let claim = &mut self.claim;
         claim.claimant = claimant.key();
         claim.claim_id = claim_id;
-        claim.proof_hash = proof_hash;
+        // claim.proof_hash = proof_hash;
         claim.votes_for = 0;
         claim.votes_against = 0;
         claim.resolved = false;
