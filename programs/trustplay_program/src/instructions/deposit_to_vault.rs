@@ -26,7 +26,6 @@ impl <'info> DepositToVault<'info>{
                 from : self.payer.to_account_info(),
                 to : self.vault.to_account_info()
             }
-
          ), total_amount) 
     }
 }
