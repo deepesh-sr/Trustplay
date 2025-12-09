@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::Participant;
+use crate::{Participant, Room};
 
 #[derive(Accounts)]
 pub struct JoinRoom<'info> {

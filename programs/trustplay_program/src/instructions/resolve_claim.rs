@@ -1,6 +1,6 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, system_program::{Transfer, transfer}};
 
-use crate::error::ErrorCode;
+use crate::{Claim, Reputation, Room, RoomStatus, error::ErrorCode};
 
 #[derive(Accounts)]
 pub struct ResolveClaim<'info> {
@@ -34,23 +34,23 @@ impl <'info> ResolveClaim<'info> {
 
         require!(!self.claim.resolved, ErrorCode::AlreadyResolved);
 
-        let room = self.room;
+
         // total voters considered = participants_count (we'll use participants_count passed in)
         // let participants_count = self.participants_count.load()?;
         // require!(participants_count > 0, ErrorCode::NoParticipants);
 
         // compute percent
-        let total_votes = claim
+        let total_votes = self.claim
             .votes_for
-            .checked_add(claim.votes_against)
+            .checked_add(self.claim.votes_against)
             .ok_or(ErrorCode::NumericalOverflow)?;
         require!(total_votes > 0, ErrorCode::NoVotes);
 
         // threshold logic: accept if votes_for * 100 >= vote_threshold * total_votes
-        let accept = (claim.votes_for as u128)
+        let accept = (self.claim.votes_for as u128)
             .checked_mul(100)
             .unwrap()
-            >= (room.vote_threshold as u128).checked_mul(total_votes).unwrap();
+            >= (self.room.vote_threshold as u128).checked_mul(total_votes as u128).unwrap();
 
         if accept {
             // transfer all lamports from vault to claimant
@@ -60,52 +60,35 @@ impl <'info> ResolveClaim<'info> {
 
             // Build transfer ix from vault PDA -> claimant
             // The vault PDA is owned by system program (it is a SystemAccount). To move lamports we need to sign with PDA.
-            let bump = room.bump;
-            let seeds = &[
+            // b"vault".as_ref(),
+            // room.key().as_ref(),
+            // &[room.bump],
+        
+            
+            transfer(CpiContext::new_with_signer(self.system_program.to_account_info(), Transfer{
+                from : self.vault.to_account_info(),
+                to : self.claimant.to_account_info()
+            }, &[&[
                 b"vault".as_ref(),
-                room.key().as_ref(),
-                &[bump],
-            ];
-            let signer_seeds: &[&[u8]] = &[seeds[0], seeds[1], seeds[2]];
+                self.room.key().as_ref(),
+                &[self.room.bump],
+            ]]), vault_lamports)?;
+            
+            //update reputatio pda
+            self.reputation.set_inner(Reputation { player: self.claimant.key(), score: 0, wins: 0, initialized: true, bump : self.reputation.bump });
+            self.reputation.wins = self.reputation.wins.checked_add(1).ok_or(ErrorCode::NumericalOverflow)?;
+            self.reputation.score = self.reputation.score.checked_add(10).ok_or(ErrorCode::NumericalOverflow)?; // arbitrary scoring
 
-            let ix = system_instruction::transfer(
-                self.vault.key,
-                self.claimant.key,
-                vault_lamports,
-            );
-
-            invoke_signed(
-                &ix,
-                &[
-                    self.vault.to_account_info(),
-                    self.claimant.to_account_info(),
-                    self.system_program.to_account_info(),
-                ],
-                &[signer_seeds],
-            )?;
-
-            // update reputation PDA
-            let rep = &mut self.reputation;
-            if rep.initialized == false {
-                rep.player = *self.claimant.key;
-                rep.score = 0;
-                rep.wins = 0;
-                rep.initialized = true;
-                rep.bump = *ctx.bumps.get("reputation").unwrap();
-            }
-            rep.wins = rep.wins.checked_add(1).ok_or(ErrorCode::NumericalOverflow)?;
-            rep.score = rep.score.checked_add(10).ok_or(ErrorCode::NumericalOverflow)?; // arbitrary scoring
-
-            claim.resolved = true;
-            claim.resolved_at = Some(Clock::get()?.unix_timestamp);
+            self.claim.resolved = true;
+            self.claim.resolved_at = Some(Clock::get()?.unix_timestamp);
 
             // update room status
             let room_mut = &mut self.room;
             room_mut.status = RoomStatus::Resolved;
         } else {
             // reject - mark resolved (or leave for organizer to refund)
-            claim.resolved = true;
-            claim.resolved_at = Some(Clock::get()?.unix_timestamp);
+            self.claim.resolved = true;
+            self.claim.resolved_at = Some(Clock::get()?.unix_timestamp);
             // do not transfer funds
         }
 

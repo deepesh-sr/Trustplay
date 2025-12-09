@@ -24,15 +24,16 @@ pub struct SubmitClaim<'info> {
 impl <'info> SubmitClaim<'info>{
 
     pub fn submit_claim(&mut self, claim_id: String)-> Result<()>{
-         let claim = &mut self.claim;
-        claim.claimant = claimant.key();
-        claim.claim_id = claim_id;
-        // claim.proof_hash = proof_hash;
-        claim.votes_for = 0;
-        claim.votes_against = 0;
-        claim.resolved = false;
-        claim.created_at = Clock::get()?.unix_timestamp;
-        claim.bump = self.claim.bump ;
+        self.claim.set_inner(Claim { 
+            claimant: self.claimant.key(), 
+            claim_id : claim_id, 
+            votes_for: 0, 
+            votes_against: 0, 
+            resolved: false, 
+            created_at: Clock::get()?.unix_timestamp, 
+            resolved_at: None, 
+            bump: self.claim.bump 
+        });
         Ok(())
     }
 }
