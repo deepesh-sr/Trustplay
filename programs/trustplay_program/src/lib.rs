@@ -6,7 +6,7 @@ pub mod state;
 pub mod error;
 
 pub use constants::*;
-pub use instructions::CreateRoom;
+pub use instructions::*;
 pub use state::*;
 pub use error::ErrorCode;
 

@@ -1,5 +1,7 @@
 use anchor_lang::{prelude::*, system_program::{Transfer, transfer}};
 
+use crate::Room;
+
 #[derive(Accounts)]
 pub struct DepositToVault<'info> {
     #[account(mut, seeds = [b"room", room.organizer.as_ref(), room.room_id.as_bytes()], bump = room.bump)]
