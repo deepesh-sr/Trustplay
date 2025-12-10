@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{VoterRecord, Whitelist};
+use crate::{Claim, Room, VoterRecord, Whitelist};
 use crate::error::ErrorCode;
 
 #[derive(Accounts)]
@@ -14,6 +14,9 @@ pub struct VoteClaim<'info> {
     /// Voter signer
     #[account(mut)]
     pub voter: Signer<'info>,
+    
+    #[account(mut)]
+    pub claimant : UncheckedAccount<'info>,
 
     /// Whitelist 
     #[account(
@@ -31,17 +34,13 @@ pub struct VoteClaim<'info> {
 
 impl<'info>  VoteClaim<'info> {
      pub fn vote_claim(&mut self, accept: bool) -> Result<()> {
-        let claim = &mut ctx.accounts.claim;
-
+         let claim = &mut self.claim;
         // ensure voter hasn't voted already (voter_record PDA)
         if !self.whitelist.addresses.contains(self.voter.key) {
             panic!("TransferHook: Voter is not whitelisted");
         };
-
-        let voter_record = &mut self.voter_record;
-        voter_record.claim = claim.key();
-        voter_record.voter = self.voter.key();
-        voter_record.bump = self.voter_record.bump;
+        
+        self.voter_record.set_inner(VoterRecord { claim: claim.key(), voter: self.voter.key(), bump: self.voter_record.bump});
 
         if accept {
             claim.votes_for = claim
