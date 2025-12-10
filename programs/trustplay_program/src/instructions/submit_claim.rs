@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::Claim;
+use crate::{Claim, Room};
 
 #[derive(Accounts)]
 #[instruction(claim_id: String)]
