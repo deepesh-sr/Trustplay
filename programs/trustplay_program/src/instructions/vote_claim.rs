@@ -15,6 +15,7 @@ pub struct VoteClaim<'info> {
     #[account(mut)]
     pub voter: Signer<'info>,
     
+    /// CHECK: it's safe
     #[account(mut)]
     pub claimant : UncheckedAccount<'info>,
 

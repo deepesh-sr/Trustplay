@@ -13,7 +13,8 @@ pub struct ResolveClaim<'info> {
     #[account(mut, seeds = [b"claim", room.key().as_ref(), claimant.key.as_ref(), claim.claim_id.as_bytes()], bump = claim.bump)]
     pub claim: Account<'info, Claim>,
 
-    /// claimant to receive funds
+    /// claimant to receive fund
+    /// CHECK: it's safe
     #[account(mut)]
     pub claimant: AccountInfo<'info>,
 
