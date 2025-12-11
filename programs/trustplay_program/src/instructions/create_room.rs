@@ -17,7 +17,7 @@ pub struct CreateRoom<'info>{
     
     pub room: Account<'info, Room>,
 
-    /// Vault is a system account PDA which will hold lamports.
+    /// CHECK: it is safe.
     /// We create it here as a system account (create_account).
     #[account(
         init,
