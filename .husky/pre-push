@@ -1,1 +1,0 @@
-cd app/trustplay-frontend && bun run build
