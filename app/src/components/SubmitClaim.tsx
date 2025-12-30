@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { SystemProgram, Transaction, PublicKey } from "@solana/web3.js";
 import { FileText } from "lucide-react";
+import { sendAndConfirmTransactionWithRetry, getErrorMessage } from "@/lib/transaction-utils";
 
 interface SubmitClaimProps {
   roomPubkey: PublicKey;
@@ -63,17 +64,19 @@ export function SubmitClaim({ roomPubkey, onSuccess }: SubmitClaimProps) {
 
       const transaction = new Transaction().add(ix);
       transaction.feePayer = wallet.publicKey;
-      transaction.recentBlockhash = (
-        await programClient.connection.getLatestBlockhash()
-      ).blockhash;
+      
+      const { blockhash } = await programClient.connection.getLatestBlockhash("finalized");
+      transaction.recentBlockhash = blockhash;
 
       const signed = await wallet.signTransaction(transaction);
-      const signature = await programClient.connection.sendRawTransaction(
-        signed.serialize()
+      
+      const signature = await sendAndConfirmTransactionWithRetry(
+        programClient.connection,
+        signed,
+        { timeout: 90000 }
       );
 
-      await programClient.connection.confirmTransaction(signature, "confirmed");
-
+      console.log("Claim submitted:", signature);
       toast.success("Claim submitted successfully!");
       setClaimId("");
       setOpen(false);
@@ -82,8 +85,8 @@ export function SubmitClaim({ roomPubkey, onSuccess }: SubmitClaimProps) {
         onSuccess();
       }
     } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Failed to submit claim");
+      console.error("Submit claim error:", error);
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
