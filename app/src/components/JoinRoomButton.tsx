@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SystemProgram, Transaction, PublicKey } from "@solana/web3.js";
 import { Users } from "lucide-react";
+import { sendAndConfirmTransactionWithRetry, getErrorMessage } from "@/lib/transaction-utils";
 
 interface JoinRoomButtonProps {
   roomPubkey: PublicKey;
@@ -44,25 +45,30 @@ export function JoinRoomButton({ roomPubkey, onSuccess, disabled }: JoinRoomButt
 
       const transaction = new Transaction().add(ix);
       transaction.feePayer = wallet.publicKey;
-      transaction.recentBlockhash = (
-        await programClient.connection.getLatestBlockhash()
-      ).blockhash;
+      
+      const { blockhash, lastValidBlockHeight } = 
+        await programClient.connection.getLatestBlockhash("finalized");
+      transaction.recentBlockhash = blockhash;
 
       const signed = await wallet.signTransaction(transaction);
-      const signature = await programClient.connection.sendRawTransaction(
-        signed.serialize()
+      
+      // Use improved transaction sending with retry logic
+      const signature = await sendAndConfirmTransactionWithRetry(
+        programClient.connection,
+        signed,
+        { timeout: 90000 } // 90 second timeout
       );
 
-      await programClient.connection.confirmTransaction(signature, "confirmed");
-
+      console.log("Transaction confirmed:", signature);
       toast.success("Successfully joined the room!");
       
       if (onSuccess) {
         onSuccess();
       }
     } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Failed to join room");
+      console.error("Join room error:", error);
+      const errorMsg = getErrorMessage(error);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

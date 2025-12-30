@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SystemProgram, Transaction, PublicKey } from "@solana/web3.js";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { sendAndConfirmTransactionWithRetry, getErrorMessage } from "@/lib/transaction-utils";
 
 interface VoteClaimProps {
   roomPubkey: PublicKey;
@@ -49,25 +50,27 @@ export function VoteClaim({ roomPubkey, claimPubkey, claimantPubkey, onSuccess }
 
       const transaction = new Transaction().add(ix);
       transaction.feePayer = wallet.publicKey;
-      transaction.recentBlockhash = (
-        await programClient.connection.getLatestBlockhash()
-      ).blockhash;
+      
+      const { blockhash } = await programClient.connection.getLatestBlockhash("finalized");
+      transaction.recentBlockhash = blockhash;
 
       const signed = await wallet.signTransaction(transaction);
-      const signature = await programClient.connection.sendRawTransaction(
-        signed.serialize()
+      
+      const signature = await sendAndConfirmTransactionWithRetry(
+        programClient.connection,
+        signed,
+        { timeout: 90000 }
       );
 
-      await programClient.connection.confirmTransaction(signature, "confirmed");
-
+      console.log("Vote confirmed:", signature);
       toast.success(`Vote ${accept ? 'accepted' : 'rejected'} successfully!`);
       
       if (onSuccess) {
         onSuccess();
       }
     } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Failed to vote on claim");
+      console.error("Vote error:", error);
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(null);
     }

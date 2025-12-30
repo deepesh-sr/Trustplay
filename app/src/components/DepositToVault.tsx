@@ -19,6 +19,7 @@ import {
 import { SystemProgram, Transaction, PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import { Coins } from "lucide-react";
+import { sendAndConfirmTransactionWithRetry, getErrorMessage } from "@/lib/transaction-utils";
 
 interface DepositToVaultProps {
   roomPubkey: PublicKey;
@@ -60,17 +61,19 @@ export function DepositToVault({ roomPubkey, vaultPubkey, onSuccess }: DepositTo
 
       const transaction = new Transaction().add(ix);
       transaction.feePayer = wallet.publicKey;
-      transaction.recentBlockhash = (
-        await programClient.connection.getLatestBlockhash()
-      ).blockhash;
+      
+      const { blockhash } = await programClient.connection.getLatestBlockhash("finalized");
+      transaction.recentBlockhash = blockhash;
 
       const signed = await wallet.signTransaction(transaction);
-      const signature = await programClient.connection.sendRawTransaction(
-        signed.serialize()
+      
+      const signature = await sendAndConfirmTransactionWithRetry(
+        programClient.connection,
+        signed,
+        { timeout: 90000 }
       );
 
-      await programClient.connection.confirmTransaction(signature, "confirmed");
-
+      console.log("Deposit confirmed:", signature);
       toast.success(`Successfully deposited ${amount} SOL to vault!`);
       setAmount("");
       setOpen(false);
@@ -79,8 +82,8 @@ export function DepositToVault({ roomPubkey, vaultPubkey, onSuccess }: DepositTo
         onSuccess();
       }
     } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Failed to deposit to vault");
+      console.error("Deposit error:", error);
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
