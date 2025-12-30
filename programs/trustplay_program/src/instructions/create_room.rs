@@ -17,17 +17,6 @@ pub struct CreateRoom<'info>{
     
     pub room: Account<'info, Room>,
 
-    /// CHECK: it is safe.
-    /// We create it here as a system account (create_account).
-    #[account(
-        init,
-        payer = organizer,
-        seeds = [b"vault", room.key().as_ref()],
-        bump,
-        space = 8 // zero data; it's a system account used for lamports
-    )]
-    pub vault: UncheckedAccount<'info>,
-
     #[account(mut)]
     pub organizer: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -37,11 +26,17 @@ impl<'info> CreateRoom<'info>{
 
     pub fn create_room(&mut self,room_id : String,name : String,total_pool : u64,deadline : i64, vote_threshold : u8)-> Result<()>{
 
+        // Derive the vault PDA address
+        let (vault_pda, _vault_bump) = Pubkey::find_program_address(
+            &[b"vault", self.room.key().as_ref()],
+            &crate::ID
+        );
+
         self.room.set_inner(Room { 
             organizer: self.organizer.key(), 
             room_id: room_id, 
             name: name, 
-            vault: self.vault.key(), 
+            vault: vault_pda, 
             total_pool: total_pool, 
             status: crate::RoomStatus::Open, 
             created_at: Clock::get()?.unix_timestamp, 

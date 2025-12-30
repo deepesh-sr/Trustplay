@@ -39,15 +39,36 @@ Trustplay is a smart contract system that enables:
 - **Reputation**: User reputation scores
 - **VerifiedVoters**: Whitelist of trusted voters
 
+## Repository Structure
+
+This repository contains both the Solana program and a Next.js frontend application:
+
+```
+trustplay_program/
+├── programs/              # Solana program (Rust)
+├── tests/                # Program tests
+├── app/                  # Next.js frontend application
+├── target/               # Build artifacts
+└── Anchor.toml           # Anchor configuration
+```
+
 ## Prerequisites
 
+### For Solana Program
 - Rust 1.75+
 - Solana CLI 1.18+
 - Anchor 0.32.1+
 - Node.js 16+
 - Yarn
 
+### For Frontend
+- Node.js 20+
+- npm/yarn/bun
+- A Solana wallet (Phantom, Solflare, etc.)
+
 ## Installation
+
+### Solana Program Setup
 
 1. Clone the repository:
 ```bash
@@ -65,15 +86,46 @@ yarn install
 anchor build
 ```
 
+### Frontend Setup
+
+1. Navigate to the frontend directory:
+```bash
+cd app
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Configure environment variables in `.env.local`:
+```env
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
+NEXT_PUBLIC_FRONTEND_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_PROGRAM_ID=5iKkxpwybyU7ReYKvwwzMtqw5zP9VFTe52KhvXuQSNAe
+NEXT_PUBLIC_SOLANA_CLUSTER=devnet
+```
+
+4. Start the development server:
+```bash
+npm run dev
+```
+
+The frontend will be available at `http://localhost:3000`
+
+**📚 For detailed frontend setup instructions, see [app/SETUP_GUIDE.md](./app/SETUP_GUIDE.md)**
+
 ## Development
 
-### Building
+### Program Development
+
+#### Building
 
 ```bash
 anchor build
 ```
 
-### Testing
+#### Testing
 
 ```bash
 anchor test
@@ -84,7 +136,7 @@ Or run tests with custom options:
 yarn test
 ```
 
-### Deploying
+#### Deploying
 
 Deploy to localnet:
 ```bash
@@ -95,6 +147,24 @@ Deploy to devnet:
 ```bash
 anchor deploy --provider.cluster devnet
 ```
+
+### Frontend Development
+
+#### Running Development Server
+```bash
+cd app
+npm run dev
+```
+
+#### Building for Production
+```bash
+cd app
+npm run build
+npm run start
+```
+
+#### Adding Components
+See [app/QUICK_REFERENCE.md](./app/QUICK_REFERENCE.md) for common patterns and examples.
 
 ## Project Structure
 
@@ -121,13 +191,26 @@ trustplay_program/
 │           ├── reputation.rs
 │           └── verfiedvoters.rs
 ├── tests/                     # Integration tests
-├── app/                       # Client application
+├── app/                       # Next.js frontend
+│   ├── src/
+│   │   ├── app/              # Next.js pages and API routes
+│   │   ├── components/       # React components
+│   │   ├── lib/              # Program client and utilities
+│   │   ├── providers/        # React context providers
+│   │   ├── types/            # TypeScript type definitions
+│   │   └── idl/              # Program IDL
+│   ├── package.json
+│   ├── README.md
+│   ├── SETUP_GUIDE.md
+│   └── QUICK_REFERENCE.md
 └── target/                    # Build artifacts
 ```
 
-## Usage Example
+## Usage Examples
 
-### Creating a Room
+### Program Usage (TypeScript/Anchor)
+
+#### Creating a Room
 
 ```typescript
 await program.methods
@@ -177,6 +260,29 @@ await program.methods
   .rpc();
 ```
 
+### Frontend Usage (React/Next.js)
+
+The frontend provides a complete UI for interacting with the program. See the [app directory](./app) for:
+
+- **CreateRoomForm**: UI component for creating rooms
+- **RoomList**: Display and browse available rooms
+- **WalletButton**: Connect Solana wallets
+- **Program Client**: TypeScript client for program interactions
+
+Example using the frontend:
+```typescript
+import { useProgram } from "@/providers/ProgramProvider";
+import { useWallet } from "@jup-ag/wallet-adapter";
+
+export function MyComponent() {
+  const { programClient } = useProgram();
+  const { publicKey } = useWallet();
+
+  const rooms = await programClient.getAllRooms();
+  // Use rooms in your UI
+}
+```
+
 ## Configuration
 
 Configure network and wallet settings in `Anchor.toml`:
@@ -187,6 +293,8 @@ cluster = "localnet"  # Change to "devnet" or "mainnet-beta" as needed
 wallet = "~/.config/solana/id.json"
 ```
 
+For frontend configuration, see [app/.env.local](./app/.env.local)
+
 ## Security Considerations
 
 - All instructions use PDA (Program Derived Addresses) for secure account derivation
@@ -194,6 +302,13 @@ wallet = "~/.config/solana/id.json"
 - Vote threshold mechanisms to prevent manipulation
 - Deadline enforcement for time-sensitive operations
 - Reputation system to track and discourage malicious behavior
+
+## Documentation
+
+- **Program Documentation**: This README
+- **Frontend Setup**: [app/SETUP_GUIDE.md](./app/SETUP_GUIDE.md)
+- **Quick Reference**: [app/QUICK_REFERENCE.md](./app/QUICK_REFERENCE.md)
+- **Frontend README**: [app/README.md](./app/README.md)
 
 ## Contributing
 

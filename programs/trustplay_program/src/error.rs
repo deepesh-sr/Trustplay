@@ -12,4 +12,8 @@ pub enum ErrorCode {
     NoParticipants,
     #[msg("Insufficient Funds")]
     InsufficientFunds,
+    #[msg("Voter is not whitelisted")]
+    VoterNotWhitelisted,
+    #[msg("Invalid vault account")]
+    InvalidVaultAccount,
 }

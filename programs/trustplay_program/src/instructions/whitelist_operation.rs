@@ -5,6 +5,32 @@ use anchor_lang::{
 
 use crate::verfiedvoters::Whitelist;
 
+/// Initialize the whitelist account
+#[derive(Accounts)]
+pub struct InitializeWhitelist<'info> {
+    #[account(mut)]
+    pub organizer: Signer<'info>,
+    
+    #[account(
+        init,
+        payer = organizer,
+        space = 8 + 4 + 1, // discriminator + vec length + bump
+        seeds = [b"whitelist"],
+        bump,
+    )]
+    pub whitelist: Account<'info, Whitelist>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+impl<'info> InitializeWhitelist<'info> {
+    pub fn initialize(&mut self) -> Result<()> {
+        self.whitelist.addresses = Vec::new();
+        self.whitelist.bump = self.whitelist.bump;
+        Ok(())
+    }
+}
+
 #[derive(Accounts)]
 pub struct WhitelistOperations<'info> {
     #[account(

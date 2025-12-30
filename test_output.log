@@ -1,0 +1,122 @@
+    Finished `release` profile [optimized] target(s) in 0.07s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running unittests src/lib.rs (/Users/deepeshsinghrathore/Projects/superearn/trustplay_program/target/debug/deps/trustplay_program-6472588c3f727330)
+
+Found a 'test' script in the Anchor.toml. Running it as a test suite!
+
+Running test suite: "/Users/deepeshsinghrathore/Projects/superearn/trustplay_program/Anchor.toml"
+
+(node:32881) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/deepeshsinghrathore/Projects/superearn/trustplay_program/tests/trustplay_program.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/deepeshsinghrathore/Projects/superearn/trustplay_program/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+  trustplay_program
+✅ Whitelist initialized: 3atcpGEhWK9TkWPuGZWXA7mSKuxk8XKi4x7NuifwMctTVWjCAfAgr5K8Quq3oWiKA6NhaTVDG1Ceoq5PJ3BmnCid
+    ✔ Initializes whitelist (465ms)
+✅ Voters added to whitelist
+    ✔ Adds voters to whitelist (932ms)
+✅ Room created: 3s36dr7wFmvUijHRj5obb7xszrG9ofMKq2vvz8ZKFixDb3u33vE3akuYLRthooNimYwvmGLS1Md52bPjXfzfSrtg
+    ✔ Creates a room (447ms)
+    1) Player 1 joins the room
+    2) Player 2 joins the room
+    3) Player 1 deposits to vault
+    4) Player 1 submits a claim
+    5) Voter 1 votes to accept the claim
+    6) Voter 2 votes to accept the claim
+    7) Resolves the claim and distributes rewards
+✅ Voter removed from whitelist
+    ✔ Removes a voter from whitelist (402ms)
+
+========================================
+✅ All Trustplay Program Tests Passed!
+========================================
+✓ Whitelist initialization
+✓ Adding voters to whitelist
+✓ Room creation
+✓ Players joining room
+✓ Deposits to vault
+✓ Claim submission
+✓ Voting on claims
+✓ Claim resolution & reward distribution
+✓ Reputation tracking
+✓ Removing voters from whitelist
+========================================
+
+    ✔ Summary: All tests passed! 🎉
+
+
+  5 passing (4s)
+  7 failing
+
+  1) trustplay_program
+       Player 1 joins the room:
+     Error: AnchorError caused by account: room. Error Code: ConstraintSeeds. Error Number: 2006. Error Message: A seeds constraint was violated.
+Program log: Left:
+Program log: 4LXZXngpUTBJvtVxtMQjSoNpGeeXRUek5Dt5YjpAoX6V
+Program log: Right:
+Program log: DKBuCtE6E4DTsHrHDQhkjtheJjiCTcYoAY7ufCwAk2o4
+      at AnchorError.parse (node_modules/@coral-xyz/anchor/src/error.ts:168:14)
+      at translateError (node_modules/@coral-xyz/anchor/src/error.ts:277:35)
+      at MethodsBuilder.rpc [as _rpcFn] (node_modules/@coral-xyz/anchor/src/program/namespace/rpc.ts:35:29)
+      at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+  2) trustplay_program
+       Player 2 joins the room:
+     Error: AnchorError caused by account: room. Error Code: ConstraintSeeds. Error Number: 2006. Error Message: A seeds constraint was violated.
+Program log: Left:
+Program log: 4LXZXngpUTBJvtVxtMQjSoNpGeeXRUek5Dt5YjpAoX6V
+Program log: Right:
+Program log: DKBuCtE6E4DTsHrHDQhkjtheJjiCTcYoAY7ufCwAk2o4
+      at AnchorError.parse (node_modules/@coral-xyz/anchor/src/error.ts:168:14)
+      at translateError (node_modules/@coral-xyz/anchor/src/error.ts:277:35)
+      at MethodsBuilder.rpc [as _rpcFn] (node_modules/@coral-xyz/anchor/src/program/namespace/rpc.ts:35:29)
+      at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+  3) trustplay_program
+       Player 1 deposits to vault:
+     Error: AnchorError caused by account: vault. Error Code: AccountNotSystemOwned. Error Number: 3011. Error Message: The given account is not owned by the system program.
+      at AnchorError.parse (node_modules/@coral-xyz/anchor/src/error.ts:168:14)
+      at translateError (node_modules/@coral-xyz/anchor/src/error.ts:277:35)
+      at MethodsBuilder.rpc [as _rpcFn] (node_modules/@coral-xyz/anchor/src/program/namespace/rpc.ts:35:29)
+      at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+  4) trustplay_program
+       Player 1 submits a claim:
+     Error: AnchorError caused by account: room. Error Code: ConstraintSeeds. Error Number: 2006. Error Message: A seeds constraint was violated.
+Program log: Left:
+Program log: 4LXZXngpUTBJvtVxtMQjSoNpGeeXRUek5Dt5YjpAoX6V
+Program log: Right:
+Program log: DKBuCtE6E4DTsHrHDQhkjtheJjiCTcYoAY7ufCwAk2o4
+      at AnchorError.parse (node_modules/@coral-xyz/anchor/src/error.ts:168:14)
+      at translateError (node_modules/@coral-xyz/anchor/src/error.ts:277:35)
+      at MethodsBuilder.rpc [as _rpcFn] (node_modules/@coral-xyz/anchor/src/program/namespace/rpc.ts:35:29)
+      at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+  5) trustplay_program
+       Voter 1 votes to accept the claim:
+     Error: AnchorError caused by account: claim. Error Code: AccountNotInitialized. Error Number: 3012. Error Message: The program expected this account to be already initialized.
+      at AnchorError.parse (node_modules/@coral-xyz/anchor/src/error.ts:168:14)
+      at translateError (node_modules/@coral-xyz/anchor/src/error.ts:277:35)
+      at MethodsBuilder.rpc [as _rpcFn] (node_modules/@coral-xyz/anchor/src/program/namespace/rpc.ts:35:29)
+      at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+  6) trustplay_program
+       Voter 2 votes to accept the claim:
+     Error: AnchorError caused by account: claim. Error Code: AccountNotInitialized. Error Number: 3012. Error Message: The program expected this account to be already initialized.
+      at AnchorError.parse (node_modules/@coral-xyz/anchor/src/error.ts:168:14)
+      at translateError (node_modules/@coral-xyz/anchor/src/error.ts:277:35)
+      at MethodsBuilder.rpc [as _rpcFn] (node_modules/@coral-xyz/anchor/src/program/namespace/rpc.ts:35:29)
+      at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+  7) trustplay_program
+       Resolves the claim and distributes rewards:
+     Error: AnchorError caused by account: vault. Error Code: AccountNotSystemOwned. Error Number: 3011. Error Message: The given account is not owned by the system program.
+      at AnchorError.parse (node_modules/@coral-xyz/anchor/src/error.ts:168:14)
+      at translateError (node_modules/@coral-xyz/anchor/src/error.ts:277:35)
+      at MethodsBuilder.rpc [as _rpcFn] (node_modules/@coral-xyz/anchor/src/program/namespace/rpc.ts:35:29)
+      at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
+
