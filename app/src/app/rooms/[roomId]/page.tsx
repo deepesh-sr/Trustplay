@@ -14,6 +14,11 @@ import { ArrowLeft, Users, Coins, Calendar, CheckCircle, AlertCircle } from "luc
 import Link from "next/link";
 import { toast } from "sonner";
 import { formatDate, formatSol, shortenAddress } from "@/lib/utils";
+import { JoinRoomButton } from "@/components/JoinRoomButton";
+import { DepositToVault } from "@/components/DepositToVault";
+import { SubmitClaim } from "@/components/SubmitClaim";
+import { VoteClaim } from "@/components/VoteClaim";
+import { ResolveClaim } from "@/components/ResolveClaim";
 
 export default function RoomDetailsPage({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = use(params);
@@ -22,24 +27,43 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ roomId: 
   
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [claims, setClaims] = useState<any[]>([]);
+  const [isParticipant, setIsParticipant] = useState(false);
   
   const roomPubkey = new PublicKey(roomId);
   
-  useEffect(() => {
-    const fetchRoomData = async () => {
-      try {
-        const roomAccount = await programClient.program.account.room.fetch(roomPubkey);
-        setRoom(roomAccount as any);
-      } catch (error) {
-        console.error("Error fetching room:", error);
-        toast.error("Failed to load room details");
-      } finally {
-        setLoading(false);
+  const fetchData = async () => {
+    try {
+      const roomAccount = await programClient.program.account.room.fetch(roomPubkey);
+      setRoom(roomAccount as any);
+      
+      // Fetch participants
+      const participantsList = await programClient.getParticipantsByRoom(roomPubkey);
+      setParticipants(participantsList);
+      
+      // Check if current wallet is a participant
+      if (wallet.publicKey) {
+        const isP = participantsList.some((p: any) => 
+          p.account.player.toString() === wallet.publicKey?.toString()
+        );
+        setIsParticipant(isP);
       }
-    };
-
-    fetchRoomData();
-  }, [roomPubkey, programClient]);
+      
+      // Fetch claims
+      const claimsList = await programClient.getClaimsByRoom(roomPubkey);
+      setClaims(claimsList);
+    } catch (error) {
+      console.error("Error fetching room data:", error);
+      toast.error("Failed to load room details");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchData();
+  }, [roomPubkey, programClient, wallet.publicKey]);
   
   if (loading) {
     return (
@@ -157,22 +181,77 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ roomId: 
           {/* Additional Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Coming Soon</CardTitle>
-              <CardDescription>Additional features will be available once all program instructions are implemented</CardDescription>
+              <CardTitle>Participants ({participants.length})</CardTitle>
+              <CardDescription>Players who have joined this room</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                <span>• Join room and view participants</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Coins className="h-4 w-4" />
-                <span>• Deposit funds to vault</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle className="h-4 w-4" />
-                <span>• Submit and vote on claims</span>
-              </div>
+              {participants.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No participants yet</p>
+              ) : (
+                participants.map((p: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span className="font-mono text-sm">{shortenAddress(p.account.player.toString())}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(Number(p.account.joinedAt))}
+                    </span>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Claims Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Claims ({claims.length})</CardTitle>
+              <CardDescription>Submitted claims for this room</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {claims.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No claims submitted yet</p>
+              ) : (
+                claims.map((c: any, idx: number) => (
+                  <Card key={idx}>
+                    <CardContent className="pt-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold">{c.account.claimId}</span>
+                          <Badge variant={c.account.resolved ? "default" : "secondary"}>
+                            {c.account.resolved ? "Resolved" : "Pending"}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="text-green-600">👍 {c.account.votesFor.toString()}</span>
+                          <span className="text-red-600">👎 {c.account.votesAgainst.toString()}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          By: {shortenAddress(c.account.claimant.toString())}
+                        </div>
+                        {!c.account.resolved && wallet.publicKey && (
+                          <VoteClaim
+                            roomPubkey={roomPubkey}
+                            claimPubkey={c.publicKey}
+                            claimantPubkey={c.account.claimant}
+                            onSuccess={fetchData}
+                          />
+                        )}
+                        {!c.account.resolved && 
+                         wallet.publicKey?.toString() === c.account.claimant.toString() && (
+                          <ResolveClaim
+                            roomPubkey={roomPubkey}
+                            claimPubkey={c.publicKey}
+                            vaultPubkey={room.vault}
+                            onSuccess={fetchData}
+                          />
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </CardContent>
           </Card>
         </div>
@@ -211,12 +290,30 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ roomId: 
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full" variant="outline" disabled>
-                Join Room (Coming Soon)
-              </Button>
-              <Button className="w-full" variant="outline" disabled>
-                Submit Claim (Coming Soon)
-              </Button>
+              {!isParticipant && wallet.publicKey && (
+                <JoinRoomButton 
+                  roomPubkey={roomPubkey} 
+                  onSuccess={fetchData}
+                />
+              )}
+              {isParticipant && (
+                <>
+                  <DepositToVault
+                    roomPubkey={roomPubkey}
+                    vaultPubkey={new PublicKey(room.vault)}
+                    onSuccess={fetchData}
+                  />
+                  <SubmitClaim
+                    roomPubkey={roomPubkey}
+                    onSuccess={fetchData}
+                  />
+                </>
+              )}
+              {!wallet.publicKey && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Connect your wallet to interact with this room
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>

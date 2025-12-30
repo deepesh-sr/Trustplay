@@ -926,3 +926,62 @@ export type TrustplayProgram = {
     }
   ]
 };
+
+// Export proper types for use in components
+import { PublicKey } from "@solana/web3.js";
+
+export interface Room {
+  organizer: PublicKey;
+  roomId: string;
+  name: string;
+  vault: PublicKey;
+  totalPool: bigint;
+  status: RoomStatus;
+  createdAt: bigint;
+  deadlineTs: bigint;
+  voteThreshold: number;
+  bump: number;
+}
+
+export interface Claim {
+  claimant: PublicKey;
+  claimId: string;
+  votesFor: bigint;
+  votesAgainst: bigint;
+  resolved: boolean;
+  createdAt: bigint;
+  resolvedAt: bigint | null;
+  bump: number;
+}
+
+export interface Participant {
+  player: PublicKey;
+  joinedAt: bigint;
+  bump: number;
+}
+
+export interface Reputation {
+  player: PublicKey;
+  score: bigint;
+  wins: number;
+  initialized: boolean;
+  bump: number;
+}
+
+export type RoomStatus = 
+  | { open: {} }
+  | { inProgress: {} }
+  | { resolved: {} }
+  | { cancelled: {} };
+
+export interface VoterRecord {
+  claim: PublicKey;
+  voter: PublicKey;
+  bump: number;
+}
+
+export interface Whitelist {
+  addresses: PublicKey[];
+  bump: number;
+}
+
