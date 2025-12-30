@@ -4,27 +4,29 @@ use crate::{Claim, Reputation, Room, RoomStatus, error::ErrorCode};
 
 #[derive(Accounts)]
 pub struct ResolveClaim<'info> {
-    #[account(mut, seeds = [b"room", room.organizer.as_ref(), room.room_id.as_bytes()], bump = room.bump)]
+    #[account(mut)]
     pub room: Account<'info, Room>,
 
-    #[account(mut, seeds = [b"vault", room.key().as_ref()], bump)]
-    pub vault: SystemAccount<'info>,
+    /// CHECK: vault is a PDA
+    #[account(mut)]
+    pub vault: UncheckedAccount<'info>,
 
-    #[account(mut, seeds = [b"claim", room.key().as_ref(), claimant.key.as_ref(), claim.claim_id.as_bytes()], bump = claim.bump)]
+    #[account(mut)]
     pub claim: Account<'info, Claim>,
 
     /// claimant to receive fund
-    /// CHECK: it's safe
     #[account(mut)]
-    pub claimant: AccountInfo<'info>,
+    pub claimant: Signer<'info>,
 
     /// reputation PDA for claimant (init if needed)
-    #[account(mut, seeds = [b"rep", claimant.key.as_ref()], bump)]
+    #[account(
+        init_if_needed,
+        payer = claimant,
+        space = 8 + Reputation::INIT_SPACE,
+        seeds = [b"rep", claimant.key().as_ref()],
+        bump
+    )]
     pub reputation: Account<'info, Reputation>,
-
-    /// participants_count is a trivial loader storing the current number of participants
-    /// For simplicity we use an AccountLoader<u64> to store the count on-chain (could be improved)
-    // pub participants_count: AccountLoader<'info, u64>,
 
     pub system_program: Program<'info, System>,
 }
@@ -55,28 +57,50 @@ impl <'info> ResolveClaim<'info> {
 
         if accept {
             // transfer all lamports from vault to claimant
-            let vault_lamports = self.vault.to_account_info().lamports().checked_sub(Rent::get()?.minimum_balance(self.vault.data_len())).unwrap();
+            let vault_lamports = self.vault.to_account_info().lamports()
+                .checked_sub(Rent::get()?.minimum_balance(self.vault.data_len()))
+                .unwrap();
 
             require!(vault_lamports > 0, ErrorCode::InsufficientFunds);
 
+            // Derive the vault bump
+            let (vault_pda, vault_bump) = Pubkey::find_program_address(
+                &[b"vault".as_ref(), self.room.key().as_ref()],
+                &crate::ID
+            );
+            
+            // Verify the vault account matches
+            require_keys_eq!(
+                vault_pda,
+                self.vault.key(),
+                ErrorCode::InvalidVaultAccount
+            );
+
             // Build transfer ix from vault PDA -> claimant
-            // The vault PDA is owned by system program (it is a SystemAccount). To move lamports we need to sign with PDA.
-            // b"vault".as_ref(),
-            // room.key().as_ref(),
-            // &[room.bump],
-        
+            transfer(
+                CpiContext::new_with_signer(
+                    self.system_program.to_account_info(),
+                    Transfer {
+                        from: self.vault.to_account_info(),
+                        to: self.claimant.to_account_info()
+                    },
+                    &[&[
+                        b"vault".as_ref(),
+                        self.room.key().as_ref(),
+                        &[vault_bump],
+                    ]]
+                ),
+                vault_lamports
+            )?;
             
-            transfer(CpiContext::new_with_signer(self.system_program.to_account_info(), Transfer{
-                from : self.vault.to_account_info(),
-                to : self.claimant.to_account_info()
-            }, &[&[
-                b"vault".as_ref(),
-                self.room.key().as_ref(),
-                &[self.room.bump],
-            ]]), vault_lamports)?;
-            
-            //update reputatio pda
-            self.reputation.set_inner(Reputation { player: self.claimant.key(), score: 0, wins: 0, initialized: true, bump : self.reputation.bump });
+            //update reputation pda
+            if !self.reputation.initialized {
+                self.reputation.player = self.claimant.key();
+                self.reputation.score = 0;
+                self.reputation.wins = 0;
+                self.reputation.initialized = true;
+                self.reputation.bump = self.reputation.bump;
+            }
             self.reputation.wins = self.reputation.wins.checked_add(1).ok_or(ErrorCode::NumericalOverflow)?;
             self.reputation.score = self.reputation.score.checked_add(10).ok_or(ErrorCode::NumericalOverflow)?; // arbitrary scoring
 

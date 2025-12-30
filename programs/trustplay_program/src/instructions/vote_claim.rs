@@ -5,10 +5,10 @@ use crate::error::ErrorCode;
 
 #[derive(Accounts)]
 pub struct VoteClaim<'info> {
-    #[account(mut, seeds = [b"room", room.organizer.as_ref(), room.room_id.as_bytes()], bump = room.bump)]
+    #[account(mut)]
     pub room: Account<'info, Room>,
 
-    #[account(mut, seeds = [b"claim", room.key().as_ref(), claimant.key.as_ref(), claim.claim_id.as_bytes()], bump = claim.bump)]
+    #[account(mut)]
     pub claim: Account<'info, Claim>,
 
     /// Voter signer
@@ -17,31 +17,43 @@ pub struct VoteClaim<'info> {
     
     /// CHECK: it's safe
     #[account(mut)]
-    pub claimant : UncheckedAccount<'info>,
+    pub claimant: UncheckedAccount<'info>,
 
     /// Whitelist 
     #[account(
         seeds = [b"whitelist"],
-        bump = whitelist.bump,
+        bump,
     )]
-    pub whitelist : Account<'info,Whitelist>,
+    pub whitelist: Account<'info, Whitelist>,
 
     /// a voter_record to prevent double votes
-    #[account(init, payer = voter, space = 8 + VoterRecord::INIT_SPACE, seeds = [b"voter", claim.key().as_ref(), voter.key().as_ref()], bump)]
+    #[account(
+        init, 
+        payer = voter, 
+        space = 8 + VoterRecord::INIT_SPACE, 
+        seeds = [b"voter", claim.key().as_ref(), voter.key().as_ref()], 
+        bump
+    )]
     pub voter_record: Account<'info, VoterRecord>,
 
     pub system_program: Program<'info, System>,
 }
 
-impl<'info>  VoteClaim<'info> {
-     pub fn vote_claim(&mut self, accept: bool) -> Result<()> {
-         let claim = &mut self.claim;
-        // ensure voter hasn't voted already (voter_record PDA)
-        if !self.whitelist.addresses.contains(self.voter.key) {
-            panic!("TransferHook: Voter is not whitelisted");
-        };
+impl<'info> VoteClaim<'info> {
+    pub fn vote_claim(&mut self, accept: bool) -> Result<()> {
+        let claim = &mut self.claim;
         
-        self.voter_record.set_inner(VoterRecord { claim: claim.key(), voter: self.voter.key(), bump: self.voter_record.bump});
+        // Ensure voter is whitelisted
+        if !self.whitelist.addresses.contains(&self.voter.key()) {
+            return Err(ErrorCode::VoterNotWhitelisted.into());
+        }
+        
+        // Record the vote to prevent double voting
+        self.voter_record.set_inner(VoterRecord { 
+            claim: claim.key(), 
+            voter: self.voter.key(), 
+            bump: self.voter_record.bump
+        });
 
         if accept {
             claim.votes_for = claim
