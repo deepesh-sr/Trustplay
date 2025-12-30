@@ -46,6 +46,25 @@ export class TrustplayProgramClient extends ProgramClient<TrustplayProgram> {
     ]);
   }
 
+  // Get Whitelist PDA
+  getWhitelistPda(): [PublicKey, number] {
+    return this.getPda([Buffer.from("whitelist")]);
+  }
+
+  // Get Voter Record PDA
+  getVoterRecordPda(claim: PublicKey, voter: PublicKey): [PublicKey, number] {
+    return this.getPda([
+      Buffer.from("voter"),
+      claim.toBuffer(),
+      voter.toBuffer(),
+    ]);
+  }
+
+  // Get Reputation PDA
+  getReputationPda(player: PublicKey): [PublicKey, number] {
+    return this.getPda([Buffer.from("rep"), player.toBuffer()]);
+  }
+
   // Fetch Room account
   async getRoom(roomPda: PublicKey): Promise<Room | null> {
     try {
@@ -94,6 +113,90 @@ export class TrustplayProgramClient extends ProgramClient<TrustplayProgram> {
     } catch (error) {
       console.error("Error fetching rooms by organizer:", error);
       return [];
+    }
+  }
+
+  // Fetch Participant account
+  async getParticipant(participantPda: PublicKey) {
+    try {
+      // @ts-ignore
+      return await this.program.account.participant.fetch(participantPda);
+    } catch (error) {
+      console.error("Error fetching participant:", error);
+      return null;
+    }
+  }
+
+  // Fetch all Participants for a room
+  async getParticipantsByRoom(room: PublicKey) {
+    try {
+      // @ts-ignore
+      const participants = await this.program.account.participant.all([
+        {
+          memcmp: {
+            offset: 8, // Discriminator
+            bytes: room.toBase58(),
+          },
+        },
+      ]);
+      return participants;
+    } catch (error) {
+      console.error("Error fetching participants:", error);
+      return [];
+    }
+  }
+
+  // Fetch Claim account
+  async getClaim(claimPda: PublicKey) {
+    try {
+      // @ts-ignore
+      return await this.program.account.claim.fetch(claimPda);
+    } catch (error) {
+      console.error("Error fetching claim:", error);
+      return null;
+    }
+  }
+
+  // Fetch all Claims for a room
+  async getClaimsByRoom(room: PublicKey) {
+    try {
+      // @ts-ignore
+      const claims = await this.program.account.claim.all([
+        {
+          memcmp: {
+            offset: 8, // Discriminator
+            bytes: room.toBase58(),
+          },
+        },
+      ]);
+      return claims;
+    } catch (error) {
+      console.error("Error fetching claims:", error);
+      return [];
+    }
+  }
+
+  // Fetch Whitelist account
+  async getWhitelist() {
+    try {
+      const [whitelistPda] = this.getWhitelistPda();
+      // @ts-ignore
+      return await this.program.account.whitelist.fetch(whitelistPda);
+    } catch (error) {
+      console.error("Error fetching whitelist:", error);
+      return null;
+    }
+  }
+
+  // Fetch Reputation account
+  async getReputation(player: PublicKey) {
+    try {
+      const [reputationPda] = this.getReputationPda(player);
+      // @ts-ignore
+      return await this.program.account.reputation.fetch(reputationPda);
+    } catch (error) {
+      console.error("Error fetching reputation:", error);
+      return null;
     }
   }
 
